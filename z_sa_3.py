@@ -20,6 +20,7 @@ from transformers import (
     GPT2Tokenizer, GPT2LMHeadModel
 )
 from transformers.utils import PaddingStrategy
+from math_dataset import math_dataset_provider
 import pdb
 
 
@@ -66,7 +67,7 @@ class ScriptArguments:
         metadata={"help": "The number of training epochs for the reward model."},
     )
     train_set_path: Optional[str] = field(
-        default="openai/gsm8k",
+        default="MATH",
         metadata={"help": "The dir of the subset of the training data to use"},
     )
     output_path: Optional[str] = field(
@@ -113,10 +114,9 @@ train_path = script_args.train_set_path
 output_name = script_args.output_path
 
 
-
 def tokenize(sample):
     tokenized_q = tokenizer(few_shot_cot_prompt + sample['question'], truncation=True)
-    answer_text = sample['answer'].split('####')[-1].strip()
+    answer_text = sample['answer']
     answer = f"The answer is {answer_text}."
     tokenized_a = tokenizer(answer, truncation=True)
     sample["input_ids_q"] = tokenized_q["input_ids"]
@@ -125,7 +125,8 @@ def tokenize(sample):
     sample["attention_mask_a"] = tokenized_a["attention_mask"]
     return sample
 
-train_dataset = load_dataset(train_path, "main")["train"]#.shuffle(seed=42)
+# train_dataset = load_dataset(train_path, "main")["train"]#.shuffle(seed=42)
+train_dataset = math_dataset_provider(train_path)["train"]
 train_dataset = train_dataset.map(tokenize, num_proc=16)
 
 
